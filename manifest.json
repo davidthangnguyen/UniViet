@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "UniViet",
   "version": "1.0.0",
-  "description": "Bộ gõ tiếng Việt TELEX với quy tắc W đặc biệt",
+  "description": "Bộ gõ tiếng Việt TELEX đầy đủ, thuận tiện",
   "permissions": ["storage", "activeTab"],
   "background": {
     "service_worker": "background.js"
@@ -12,7 +12,8 @@
       "matches": ["<all_urls>"],
       "js": ["univiet-core.js", "content.js"],
       "run_at": "document_end",
-      "all_frames": true
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "action": {
