@@ -15,8 +15,16 @@
     loadSettings();
     attachEventListeners();
 
+    // Debug: Check if loaded in about:blank iframe (Google Docs)
+    if (window.location.href === "about:blank") {
+      console.log("[UniViet] Loaded in about:blank iframe!");
+      console.log("[UniViet] Parent hostname:", window.parent?.location?.hostname);
+    }
+
     // Debug & setup Google Docs specific handling
-    if (window.location.hostname === "docs.google.com") {
+    if (window.location.hostname === "docs.google.com" ||
+        (window.location.href === "about:blank" &&
+         window.parent?.location?.hostname === "docs.google.com")) {
       console.log("[UniViet] Loaded on Google Docs:", window.location.href);
       setupGoogleDocsObserver();
 
