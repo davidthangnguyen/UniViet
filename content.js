@@ -14,6 +14,25 @@
     univiet = new UniVietCore();
     loadSettings();
     attachEventListeners();
+
+    // Debug: Check if we're on Google Docs
+    if (window.location.hostname === "docs.google.com") {
+      console.log("[UniViet] Loaded on Google Docs:", window.location.href);
+
+      // Log any contentEditable elements after a delay
+      setTimeout(() => {
+        const editables = document.querySelectorAll('[contenteditable="true"]');
+        console.log("[UniViet] Found contentEditable elements:", editables.length);
+        editables.forEach((el, i) => {
+          console.log(`[UniViet] Element ${i}:`, {
+            tagName: el.tagName,
+            className: el.className,
+            id: el.id,
+            isContentEditable: el.isContentEditable
+          });
+        });
+      }, 3000); // Wait 3s for Google Docs to fully load
+    }
   }
 
   // Load settings từ storage
@@ -120,14 +139,21 @@
 
   // Xử lý beforeinput - Event hiện đại (Google Docs, modern apps)
   function handleBeforeInput(event) {
-    const isGDocs = isGoogleDocsEditor(event.target);
-    if (isGDocs) {
-      console.log("[UniViet-GDocs] beforeinput:", {
+    // Debug for ALL beforeinput on Google Docs
+    if (window.location.hostname === "docs.google.com") {
+      console.log("[UniViet] beforeinput triggered:", {
         inputType: event.inputType,
         data: event.data,
         target: event.target,
-        className: event.target.className
+        tagName: event.target.tagName,
+        className: event.target.className,
+        isContentEditable: event.target.isContentEditable
       });
+    }
+
+    const isGDocs = isGoogleDocsEditor(event.target);
+    if (isGDocs) {
+      console.log("[UniViet-GDocs] Detected as Google Docs element!");
     }
 
     // Kiểm tra enabled
