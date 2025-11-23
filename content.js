@@ -71,6 +71,19 @@
               if (editables && editables.length > 0) {
                 console.log("[UniViet] Found", editables.length, "contentEditable children");
               }
+
+              // Check for the about:blank iframe
+              if (node.tagName === "IFRAME") {
+                console.log("[UniViet] Found iframe:", {
+                  className: node.className,
+                  src: node.src,
+                  id: node.id
+                });
+                if (node.className.includes("docs-texteventtarget-iframe") || node.src === "about:blank") {
+                  console.log("[UniViet] Found Google Docs input iframe!");
+                  tryInjectIntoIframe(node);
+                }
+              }
             }
           });
         }
@@ -86,6 +99,45 @@
     });
 
     console.log("[UniViet] MutationObserver started for Google Docs");
+
+    // Also check existing iframes
+    setTimeout(() => {
+      const iframes = document.querySelectorAll("iframe");
+      console.log("[UniViet] Found", iframes.length, "iframes on page");
+      iframes.forEach(iframe => {
+        console.log("[UniViet] Iframe details:", {
+          className: iframe.className,
+          src: iframe.src,
+          id: iframe.id
+        });
+        if (iframe.className.includes("docs-texteventtarget-iframe") || iframe.src === "about:blank") {
+          console.log("[UniViet] Found Google Docs input iframe!");
+          tryInjectIntoIframe(iframe);
+        }
+      });
+    }, 1000);
+  }
+
+  // Try to inject event listeners into iframe
+  function tryInjectIntoIframe(iframe) {
+    try {
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        console.log("[UniViet] Cannot access iframe document (sandbox/cross-origin)");
+        return;
+      }
+
+      console.log("[UniViet] Successfully accessed iframe document!");
+
+      // Attach event listeners to iframe document
+      iframeDoc.addEventListener("beforeinput", handleBeforeInput, true);
+      iframeDoc.addEventListener("keypress", handleKeyPress, true);
+      iframeDoc.addEventListener("keydown", handleKeyDown, true);
+
+      console.log("[UniViet] Event listeners attached to iframe!");
+    } catch (e) {
+      console.log("[UniViet] Error accessing iframe:", e.message);
+    }
   }
 
   // Load settings từ storage
