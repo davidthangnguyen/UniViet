@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "UniViet",
-  "version": "1.0.3",
+  "version": "1.0.0",
   "description": "Bộ gõ tiếng Việt TELEX với quy tắc W đặc biệt",
   "permissions": ["storage", "activeTab"],
   "background": {
