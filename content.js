@@ -35,11 +35,14 @@
 
   // Attach event listeners
   function attachEventListeners() {
+    // beforeinput - Event hiện đại cho text input (hỗ trợ Google Docs)
+    document.addEventListener("beforeinput", handleBeforeInput, true);
+
+    // Keypress - Fallback cho các trình duyệt cũ
+    document.addEventListener("keypress", handleKeyPress, true);
+
     // Keydown để bắt các phím đặc biệt
     document.addEventListener("keydown", handleKeyDown, true);
-
-    // Keypress để xử lý chính
-    document.addEventListener("keypress", handleKeyPress, true);
 
     // Lắng nghe message từ background
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -82,12 +85,55 @@
     return false;
   }
 
+  // Xử lý beforeinput - Event hiện đại (Google Docs, modern apps)
+  function handleBeforeInput(event) {
+    // Kiểm tra enabled
+    if (!isEnabled || !univiet) return;
+
+    // Chỉ xử lý insertText events
+    if (event.inputType !== "insertText") return;
+
+    // Kiểm tra Ctrl/Alt
+    if (event.ctrlKey || event.metaKey) return;
+    if (event.altKey) return;
+
+    // Lấy element
+    const element = event.target;
+    if (!shouldProcess(element)) return;
+
+    // Lấy ký tự sắp được insert
+    const key = event.data;
+    if (!key || key.length !== 1) return;
+
+    // Kiểm tra có phải chữ cái không
+    if (!/[a-zA-Z]/.test(key)) return;
+
+    // Lấy thông tin text hiện tại
+    const textInfo = univiet.getTextInfo(element);
+    if (!textInfo) return;
+
+    // Lấy từ hiện tại
+    const wordInfo = univiet.getCurrentWord(textInfo.value, textInfo.start);
+
+    // Xử lý phím
+    const result = univiet.processKey(wordInfo.word, key);
+
+    if (result && result.shouldReplace) {
+      // Ngăn không cho trình duyệt xử lý input mặc định
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Thay thế text
+      univiet.replaceText(textInfo, result, wordInfo);
+    }
+  }
+
   // Xử lý keydown
   function handleKeyDown(event) {
     // Không làm gì, chỉ để bắt các phím đặc biệt nếu cần
   }
 
-  // Xử lý keypress
+  // Xử lý keypress - Fallback cho trình duyệt cũ
   function handleKeyPress(event) {
     // Kiểm tra enabled
     if (!isEnabled || !univiet) return;
