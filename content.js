@@ -15,24 +15,69 @@
     loadSettings();
     attachEventListeners();
 
-    // Debug: Check if we're on Google Docs
+    // Debug & setup Google Docs specific handling
     if (window.location.hostname === "docs.google.com") {
       console.log("[UniViet] Loaded on Google Docs:", window.location.href);
+      setupGoogleDocsObserver();
 
-      // Log any contentEditable elements after a delay
-      setTimeout(() => {
+      // Also check periodically
+      const checkInterval = setInterval(() => {
         const editables = document.querySelectorAll('[contenteditable="true"]');
-        console.log("[UniViet] Found contentEditable elements:", editables.length);
-        editables.forEach((el, i) => {
-          console.log(`[UniViet] Element ${i}:`, {
-            tagName: el.tagName,
-            className: el.className,
-            id: el.id,
-            isContentEditable: el.isContentEditable
+        if (editables.length > 0) {
+          console.log("[UniViet] Found contentEditable elements:", editables.length);
+          editables.forEach((el, i) => {
+            console.log(`[UniViet] Element ${i}:`, {
+              tagName: el.tagName,
+              className: el.className,
+              id: el.id,
+              isContentEditable: el.isContentEditable
+            });
           });
-        });
-      }, 3000); // Wait 3s for Google Docs to fully load
+          clearInterval(checkInterval);
+        }
+      }, 500); // Check every 500ms
+
+      // Stop after 10 seconds
+      setTimeout(() => clearInterval(checkInterval), 10000);
     }
+  }
+
+  // Setup MutationObserver cho Google Docs
+  function setupGoogleDocsObserver() {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.addedNodes) {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              // Check if this node or its children are contentEditable
+              if (node.isContentEditable) {
+                console.log("[UniViet] New contentEditable detected:", {
+                  tagName: node.tagName,
+                  className: node.className,
+                  id: node.id
+                });
+              }
+
+              // Check children
+              const editables = node.querySelectorAll && node.querySelectorAll('[contenteditable="true"]');
+              if (editables && editables.length > 0) {
+                console.log("[UniViet] Found", editables.length, "contentEditable children");
+              }
+            }
+          });
+        }
+      }
+    });
+
+    // Start observing the document
+    observer.observe(document.body || document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['contenteditable']
+    });
+
+    console.log("[UniViet] MutationObserver started for Google Docs");
   }
 
   // Load settings từ storage
