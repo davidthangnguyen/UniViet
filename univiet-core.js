@@ -577,6 +577,60 @@ class UniVietCore {
     }
 
     // ================================================================
+    // 0.5. KIỂM TRA VÀ DI CHUYỂN DẤU KHI THÊM NGUYÊN ÂM
+    // ================================================================
+    // Khi người dùng gõ thêm nguyên âm sau khi đã đặt dấu thanh,
+    // cần tính toán lại vị trí đặt dấu theo quy tắc tiếng Việt
+    // VD: hif → hì, nhưng hifee → hiền (không phải hìên)
+    if (this.isVowel(key)) {
+      // Kiểm tra từ hiện tại có dấu thanh không
+      let existingTone = null;
+      let toneCharIndex = -1;
+
+      for (let i = word.length - 1; i >= 0; i--) {
+        const tone = this.getTone(word[i]);
+        if (tone) {
+          existingTone = tone;
+          toneCharIndex = i;
+          break;
+        }
+      }
+
+      if (existingTone) {
+        // Có dấu thanh → tạm thời bỏ dấu ra
+        const wordWithoutTone =
+          word.substring(0, toneCharIndex) +
+          this.removeTone(word[toneCharIndex]) +
+          word.substring(toneCharIndex + 1);
+
+        // Thêm nguyên âm mới vào
+        const newWord = wordWithoutTone + key;
+
+        // Tính toán lại vị trí đặt dấu
+        const newTonePos = this.findTonePosition(newWord);
+
+        // Kiểm tra xem vị trí dấu có thay đổi không
+        // (chỉ di chuyển dấu nếu vị trí mới khác vị trí cũ)
+        if (newTonePos >= 0 && newTonePos !== toneCharIndex) {
+          // Đặt dấu vào vị trí mới
+          const charAtNewPos = newWord[newTonePos];
+          const newCharWithTone = this.addTone(charAtNewPos, existingTone);
+
+          const result =
+            newWord.substring(0, newTonePos) +
+            newCharWithTone +
+            newWord.substring(newTonePos + 1);
+
+          return {
+            text: result,
+            shouldReplace: true,
+            deleteCount: word.length,
+          };
+        }
+      }
+    }
+
+    // ================================================================
     // 1. Xử lý Z - Xóa dấu thanh (GIỮ NGUYÊN mũ/sừng)
     // ================================================================
     if (key === "z" || key === "Z") {
