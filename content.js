@@ -80,7 +80,40 @@
     if (tagName === "textarea") return true;
 
     // Kiểm tra contentEditable
-    if (element.isContentEditable) return true;
+    if (element.isContentEditable) {
+      // Đặc biệt: Google Docs sử dụng class .kix-* cho canvas editor
+      // Cần xử lý khác cho Google Docs
+      const className = element.className || "";
+      const isGoogleDocs = className.includes("kix-") ||
+                          element.closest && element.closest(".kix-appview-editor");
+
+      if (isGoogleDocs) {
+        // Google Docs detected - cần xử lý đặc biệt
+        return true;
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  // Kiểm tra xem có phải Google Docs không
+  function isGoogleDocsEditor(element) {
+    if (!element) return false;
+
+    const className = element.className || "";
+
+    // Check các class đặc trưng của Google Docs
+    if (className.includes("kix-")) return true;
+    if (element.closest && element.closest(".kix-appview-editor")) return true;
+    if (element.closest && element.closest(".kix-lineview")) return true;
+
+    // Check URL
+    if (window.location.hostname === "docs.google.com" &&
+        window.location.pathname.includes("/document/")) {
+      return element.isContentEditable;
+    }
 
     return false;
   }
