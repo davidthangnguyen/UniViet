@@ -250,19 +250,20 @@
 
   // Xử lý beforeinput - Event hiện đại (Google Docs, modern apps)
   function handleBeforeInput(event) {
-    // Debug for ALL beforeinput events
-    const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
-    if (isGDocsUrl) {
-      console.log("[UniViet] beforeinput triggered:", {
-        url: window.location.href,
-        inputType: event.inputType,
-        data: event.data,
-        target: event.target,
-        tagName: event.target.tagName,
-        className: event.target.className,
-        isContentEditable: event.target.isContentEditable
-      });
-    }
+    try {
+      // Debug for ALL beforeinput events
+      const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
+      if (isGDocsUrl) {
+        console.log("[UniViet] beforeinput triggered:", {
+          url: window.location.href,
+          inputType: event.inputType,
+          data: event.data,
+          target: event.target,
+          tagName: event.target.tagName,
+          className: event.target.className,
+          isContentEditable: event.target.isContentEditable
+        });
+      }
 
     const isGDocs = isGoogleDocsEditor(event.target);
     if (isGDocs) {
@@ -325,6 +326,13 @@
         console.log("[UniViet-GDocs] Text replaced!");
       }
     }
+    } catch (error) {
+      const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
+      if (isGDocsUrl) {
+        console.error("[UniViet] beforeinput ERROR:", error);
+        console.error("[UniViet] beforeinput ERROR stack:", error.stack);
+      }
+    }
   }
 
   // Xử lý keydown
@@ -344,20 +352,21 @@
 
   // Xử lý keypress - Fallback cho trình duyệt cũ
   function handleKeyPress(event) {
-    // Debug for Google Docs
-    const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
-    if (isGDocsUrl) {
-      console.log("[UniViet] keypress triggered:", {
-        url: window.location.href,
-        key: event.key,
-        target: event.target.tagName,
-        className: event.target.className,
-        isContentEditable: event.target.isContentEditable,
-        id: event.target.id,
-        isEnabled: isEnabled,
-        univietExists: !!univiet
-      });
-    }
+    try {
+      // Debug for Google Docs
+      const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
+      if (isGDocsUrl) {
+        console.log("[UniViet] keypress triggered:", {
+          url: window.location.href,
+          key: event.key,
+          target: event.target.tagName,
+          className: event.target.className,
+          isContentEditable: event.target.isContentEditable,
+          id: event.target.id,
+          isEnabled: isEnabled,
+          univietExists: !!univiet
+        });
+      }
 
     // Kiểm tra enabled
     if (!isEnabled || !univiet) {
@@ -454,6 +463,13 @@
       if (isGDocsUrl) console.log("[UniViet] keypress: Text replaced!");
     } else {
       if (isGDocsUrl) console.log("[UniViet] keypress: No replacement needed");
+    }
+    } catch (error) {
+      const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
+      if (isGDocsUrl) {
+        console.error("[UniViet] keypress ERROR:", error);
+        console.error("[UniViet] keypress ERROR stack:", error.stack);
+      }
     }
   }
 
