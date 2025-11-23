@@ -353,13 +353,15 @@
         target: event.target.tagName,
         className: event.target.className,
         isContentEditable: event.target.isContentEditable,
-        id: event.target.id
+        id: event.target.id,
+        isEnabled: isEnabled,
+        univietExists: !!univiet
       });
     }
 
     // Kiểm tra enabled
     if (!isEnabled || !univiet) {
-      if (isGDocsUrl) console.log("[UniViet] keypress: Extension disabled or univiet not loaded");
+      if (isGDocsUrl) console.log("[UniViet] keypress: Extension disabled or univiet not loaded", {isEnabled, univiet: !!univiet});
       return;
     }
 
