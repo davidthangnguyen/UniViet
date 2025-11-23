@@ -65,13 +65,7 @@
 
 ## 🤝 Đóng Góp
 
-Chúng tôi rất hoan nghênh sự đóng góp từ cộng đồng! Nếu bạn phát hiện lỗi hoặc muốn cải tiến tính năng, vui lòng:
-
-1. Fork repository này.
-2. Tạo một branch mới (`git checkout -b feature/amazing-feature`).
-3. Commit thay đổi của bạn (`git commit -m 'Add some amazing feature'`).
-4. Push lên branch (`git push origin feature/amazing-feature`).
-5. Tạo một Pull Request.
+Chúng tôi rất hoan nghênh sự đóng góp từ cộng đồng! Nếu bạn phát hiện lỗi hoặc muốn cải tiến tính năng, vui lòng thông báo cho tác giả hoặc tạo fork.
 
 ## 📄 Giấy Phép
 
