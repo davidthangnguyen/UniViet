@@ -265,67 +265,67 @@
         });
       }
 
-    const isGDocs = isGoogleDocsEditor(event.target);
-    if (isGDocs) {
-      console.log("[UniViet-GDocs] Detected as Google Docs element!");
-    }
-
-    // Kiểm tra enabled
-    if (!isEnabled || !univiet) return;
-
-    // Chỉ xử lý insertText events
-    if (event.inputType !== "insertText") return;
-
-    // Kiểm tra Ctrl/Alt
-    if (event.ctrlKey || event.metaKey) return;
-    if (event.altKey) return;
-
-    // Lấy element
-    const element = event.target;
-    if (!shouldProcess(element)) return;
-
-    // Lấy ký tự sắp được insert
-    const key = event.data;
-    if (!key || key.length !== 1) return;
-
-    // Kiểm tra có phải chữ cái không
-    if (!/[a-zA-Z]/.test(key)) return;
-
-    // Lấy thông tin text hiện tại
-    const textInfo = univiet.getTextInfo(element);
-    if (isGDocs) {
-      console.log("[UniViet-GDocs] textInfo:", textInfo);
-    }
-    if (!textInfo) return;
-
-    // Lấy từ hiện tại
-    const wordInfo = univiet.getCurrentWord(textInfo.value, textInfo.start);
-    if (isGDocs) {
-      console.log("[UniViet-GDocs] wordInfo:", wordInfo);
-    }
-
-    // Xử lý phím
-    const result = univiet.processKey(wordInfo.word, key);
-    if (isGDocs) {
-      console.log("[UniViet-GDocs] processKey result:", result);
-    }
-
-    if (result && result.shouldReplace) {
-      // Ngăn không cho trình duyệt xử lý input mặc định
-      event.preventDefault();
-      event.stopPropagation();
-
+      const isGDocs = isGoogleDocsEditor(event.target);
       if (isGDocs) {
-        console.log("[UniViet-GDocs] Attempting to replace text...");
+        console.log("[UniViet-GDocs] Detected as Google Docs element!");
       }
 
-      // Thay thế text
-      univiet.replaceText(textInfo, result, wordInfo);
+      // Kiểm tra enabled
+      if (!isEnabled || !univiet) return;
 
+      // Chỉ xử lý insertText events
+      if (event.inputType !== "insertText") return;
+
+      // Kiểm tra Ctrl/Alt
+      if (event.ctrlKey || event.metaKey) return;
+      if (event.altKey) return;
+
+      // Lấy element
+      const element = event.target;
+      if (!shouldProcess(element)) return;
+
+      // Lấy ký tự sắp được insert
+      const key = event.data;
+      if (!key || key.length !== 1) return;
+
+      // Kiểm tra có phải chữ cái không
+      if (!/[a-zA-Z]/.test(key)) return;
+
+      // Lấy thông tin text hiện tại
+      const textInfo = univiet.getTextInfo(element);
       if (isGDocs) {
-        console.log("[UniViet-GDocs] Text replaced!");
+        console.log("[UniViet-GDocs] textInfo:", textInfo);
       }
-    }
+      if (!textInfo) return;
+
+      // Lấy từ hiện tại
+      const wordInfo = univiet.getCurrentWord(textInfo.value, textInfo.start);
+      if (isGDocs) {
+        console.log("[UniViet-GDocs] wordInfo:", wordInfo);
+      }
+
+      // Xử lý phím
+      const result = univiet.processKey(wordInfo.word, key);
+      if (isGDocs) {
+        console.log("[UniViet-GDocs] processKey result:", result);
+      }
+
+      if (result && result.shouldReplace) {
+        // Ngăn không cho trình duyệt xử lý input mặc định
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (isGDocs) {
+          console.log("[UniViet-GDocs] Attempting to replace text...");
+        }
+
+        // Thay thế text
+        univiet.replaceText(textInfo, result, wordInfo);
+
+        if (isGDocs) {
+          console.log("[UniViet-GDocs] Text replaced!");
+        }
+      }
     } catch (error) {
       const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
       if (isGDocsUrl) {
@@ -368,102 +368,102 @@
         });
       }
 
-    // Kiểm tra enabled
-    if (!isEnabled || !univiet) {
-      if (isGDocsUrl) console.log("[UniViet] keypress: Extension disabled or univiet not loaded", {isEnabled, univiet: !!univiet});
-      return;
-    }
-
-    if (isGDocsUrl) console.log("[UniViet] keypress: Checking Ctrl/Alt...");
-
-    // Kiểm tra Ctrl/Alt (trừ một số phím đặc biệt)
-    if (event.ctrlKey || event.metaKey) {
-      if (isGDocsUrl) console.log("[UniViet] keypress: Ctrl/Meta key, skipping");
-      return;
-    }
-    if (event.altKey) {
-      if (isGDocsUrl) console.log("[UniViet] keypress: Alt key, skipping");
-      return;
-    }
-
-    if (isGDocsUrl) console.log("[UniViet] keypress: Checking shouldProcess...");
-
-    // Lấy element
-    const element = event.target;
-    const shouldProc = shouldProcess(element);
-
-    if (isGDocsUrl) {
-      console.log("[UniViet] keypress: shouldProcess returned:", shouldProc);
-      if (!shouldProc) {
-        console.log("[UniViet] keypress: Element details:", {
-          tagName: element.tagName,
-          type: element.type,
-          readOnly: element.readOnly,
-          disabled: element.disabled,
-          isContentEditable: element.isContentEditable
-        });
+      // Kiểm tra enabled
+      if (!isEnabled || !univiet) {
+        if (isGDocsUrl) console.log("[UniViet] keypress: Extension disabled or univiet not loaded", {isEnabled, univiet: !!univiet});
+        return;
       }
-    }
 
-    if (!shouldProc) return;
+      if (isGDocsUrl) console.log("[UniViet] keypress: Checking Ctrl/Alt...");
 
-    if (isGDocsUrl) console.log("[UniViet] keypress: Getting key...");
+      // Kiểm tra Ctrl/Alt (trừ một số phím đặc biệt)
+      if (event.ctrlKey || event.metaKey) {
+        if (isGDocsUrl) console.log("[UniViet] keypress: Ctrl/Meta key, skipping");
+        return;
+      }
+      if (event.altKey) {
+        if (isGDocsUrl) console.log("[UniViet] keypress: Alt key, skipping");
+        return;
+      }
 
-    // Lấy key
-    const key = event.key;
-    if (!key || key.length !== 1) {
-      if (isGDocsUrl) console.log("[UniViet] keypress: Invalid key length:", key?.length);
-      return;
-    }
+      if (isGDocsUrl) console.log("[UniViet] keypress: Checking shouldProcess...");
 
-    if (isGDocsUrl) console.log("[UniViet] keypress: Key is:", key);
+      // Lấy element
+      const element = event.target;
+      const shouldProc = shouldProcess(element);
 
-    // Kiểm tra có phải chữ cái không
-    if (!/[a-zA-Z]/.test(key)) {
-      if (isGDocsUrl) console.log("[UniViet] keypress: Not a letter, skipping");
-      return;
-    }
+      if (isGDocsUrl) {
+        console.log("[UniViet] keypress: shouldProcess returned:", shouldProc);
+        if (!shouldProc) {
+          console.log("[UniViet] keypress: Element details:", {
+            tagName: element.tagName,
+            type: element.type,
+            readOnly: element.readOnly,
+            disabled: element.disabled,
+            isContentEditable: element.isContentEditable
+          });
+        }
+      }
 
-    if (isGDocsUrl) console.log("[UniViet] keypress: Getting textInfo...");
+      if (!shouldProc) return;
 
-    // Lấy thông tin text hiện tại
-    const textInfo = univiet.getTextInfo(element);
+      if (isGDocsUrl) console.log("[UniViet] keypress: Getting key...");
 
-    if (isGDocsUrl) console.log("[UniViet] keypress: textInfo:", textInfo);
+      // Lấy key
+      const key = event.key;
+      if (!key || key.length !== 1) {
+        if (isGDocsUrl) console.log("[UniViet] keypress: Invalid key length:", key?.length);
+        return;
+      }
 
-    if (!textInfo) {
-      if (isGDocsUrl) console.log("[UniViet] keypress: textInfo is null, skipping");
-      return;
-    }
+      if (isGDocsUrl) console.log("[UniViet] keypress: Key is:", key);
 
-    if (isGDocsUrl) console.log("[UniViet] keypress: Getting wordInfo...");
+      // Kiểm tra có phải chữ cái không
+      if (!/[a-zA-Z]/.test(key)) {
+        if (isGDocsUrl) console.log("[UniViet] keypress: Not a letter, skipping");
+        return;
+      }
 
-    // Lấy từ hiện tại
-    const wordInfo = univiet.getCurrentWord(textInfo.value, textInfo.start);
+      if (isGDocsUrl) console.log("[UniViet] keypress: Getting textInfo...");
 
-    if (isGDocsUrl) console.log("[UniViet] keypress: wordInfo:", wordInfo);
+      // Lấy thông tin text hiện tại
+      const textInfo = univiet.getTextInfo(element);
 
-    if (isGDocsUrl) console.log("[UniViet] keypress: Processing key...");
+      if (isGDocsUrl) console.log("[UniViet] keypress: textInfo:", textInfo);
 
-    // Xử lý phím
-    const result = univiet.processKey(wordInfo.word, key);
+      if (!textInfo) {
+        if (isGDocsUrl) console.log("[UniViet] keypress: textInfo is null, skipping");
+        return;
+      }
 
-    if (isGDocsUrl) console.log("[UniViet] keypress: result:", result);
+      if (isGDocsUrl) console.log("[UniViet] keypress: Getting wordInfo...");
 
-    if (result && result.shouldReplace) {
-      if (isGDocsUrl) console.log("[UniViet] keypress: Replacing text...");
+      // Lấy từ hiện tại
+      const wordInfo = univiet.getCurrentWord(textInfo.value, textInfo.start);
 
-      // Ngăn không cho trình duyệt xử lý phím
-      event.preventDefault();
-      event.stopPropagation();
+      if (isGDocsUrl) console.log("[UniViet] keypress: wordInfo:", wordInfo);
 
-      // Thay thế text
-      univiet.replaceText(textInfo, result, wordInfo);
+      if (isGDocsUrl) console.log("[UniViet] keypress: Processing key...");
 
-      if (isGDocsUrl) console.log("[UniViet] keypress: Text replaced!");
-    } else {
-      if (isGDocsUrl) console.log("[UniViet] keypress: No replacement needed");
-    }
+      // Xử lý phím
+      const result = univiet.processKey(wordInfo.word, key);
+
+      if (isGDocsUrl) console.log("[UniViet] keypress: result:", result);
+
+      if (result && result.shouldReplace) {
+        if (isGDocsUrl) console.log("[UniViet] keypress: Replacing text...");
+
+        // Ngăn không cho trình duyệt xử lý phím
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Thay thế text
+        univiet.replaceText(textInfo, result, wordInfo);
+
+        if (isGDocsUrl) console.log("[UniViet] keypress: Text replaced!");
+      } else {
+        if (isGDocsUrl) console.log("[UniViet] keypress: No replacement needed");
+      }
     } catch (error) {
       const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
       if (isGDocsUrl) {
