@@ -1,6 +1,6 @@
 /**
- * UniViet Core Engine v1.0.1
- * Bộ gõ tiếng Việt TELEX đầy đủ
+ * UniViet Core Engine v1.0.0
+ * Bộ gõ tiếng Việt TELEX với quy tắc W đặc biệt
  */
 
 class UniVietCore {
@@ -165,9 +165,40 @@ class UniVietCore {
       if (!selection.rangeCount) return null;
 
       const range = selection.getRangeAt(0);
-      const textNode = range.startContainer;
+      let textNode = range.startContainer;
 
-      if (textNode.nodeType !== Node.TEXT_NODE) return null;
+      // Nếu startContainer là element node (chưa có text), tìm hoặc tạo text node
+      if (textNode.nodeType !== Node.TEXT_NODE) {
+        // Tìm text node con đầu tiên
+        let foundTextNode = null;
+
+        // Nếu element có childNodes, tìm text node
+        if (textNode.childNodes && textNode.childNodes.length > 0) {
+          for (let i = 0; i < textNode.childNodes.length; i++) {
+            if (textNode.childNodes[i].nodeType === Node.TEXT_NODE) {
+              foundTextNode = textNode.childNodes[i];
+              break;
+            }
+          }
+        }
+
+        // Nếu không tìm thấy text node, tạo mới
+        if (!foundTextNode) {
+          foundTextNode = document.createTextNode("");
+          textNode.appendChild(foundTextNode);
+        }
+
+        textNode = foundTextNode;
+
+        // Cập nhật range để trỏ vào text node mới
+        try {
+          range.setStart(textNode, 0);
+          range.setEnd(textNode, 0);
+        } catch (e) {
+          // Nếu không set được range, return null
+          return null;
+        }
+      }
 
       value = textNode.textContent || "";
       start = range.startOffset;
@@ -185,21 +216,32 @@ class UniVietCore {
 
   /**
    * Lấy từ hiện tại đang gõ
+   * Scan cả backward và forward từ cursor position
    */
   getCurrentWord(text, position) {
-    let start = position - 1;
-    let word = "";
+    if (!text || text.length === 0) {
+      return { word: "", startPos: 0, endPos: 0 };
+    }
 
-    // Lùi về để lấy từ
-    while (start >= 0 && this.isLetter(text[start])) {
-      word = text[start] + word;
+    let start = position;
+    let end = position;
+
+    // Scan backward để tìm đầu từ
+    while (start > 0 && this.isLetter(text[start - 1])) {
       start--;
     }
 
+    // Scan forward để tìm cuối từ
+    while (end < text.length && this.isLetter(text[end])) {
+      end++;
+    }
+
+    const word = text.substring(start, end);
+
     return {
       word: word,
-      startPos: start + 1,
-      endPos: position,
+      startPos: start,
+      endPos: end,
     };
   }
 
@@ -337,6 +379,7 @@ class UniVietCore {
 
       // Tìm 2 ký tự "char" gần nhau nhất (từ cuối lên)
       // So sánh base character (bỏ dấu thanh) để match cả "o" và "õ", "ỏ", v.v.
+      // Đặc biệt: "đ" cũng được coi là "d"
       let lastIndex = -1;
       let lastChar = '';
       let secondLastIndex = -1;
@@ -344,9 +387,15 @@ class UniVietCore {
 
       for (let i = result.length - 1; i >= 0; i--) {
         const currentChar = result[i];
-        const baseChar = this.removeTone(currentChar.toLowerCase());
+        const currentCharLower = currentChar.toLowerCase();
 
-        if (baseChar === char.toLowerCase()) {
+        // Base character: bỏ dấu thanh, và đặc biệt xử lý đ→d
+        let baseChar = this.removeTone(currentCharLower);
+        if (baseChar === 'đ') baseChar = 'd';
+        if (baseChar === 'Đ') baseChar = 'D';
+
+        const targetChar = char.toLowerCase();
+        if (baseChar === targetChar) {
           if (lastIndex === -1) {
             lastIndex = i;
             lastChar = currentChar;
