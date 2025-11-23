@@ -337,6 +337,7 @@ class UniVietCore {
 
       // Tìm 2 ký tự "char" gần nhau nhất (từ cuối lên)
       // So sánh base character (bỏ dấu thanh) để match cả "o" và "õ", "ỏ", v.v.
+      // Đặc biệt: "đ" cũng được coi là "d"
       let lastIndex = -1;
       let lastChar = '';
       let secondLastIndex = -1;
@@ -344,9 +345,15 @@ class UniVietCore {
 
       for (let i = result.length - 1; i >= 0; i--) {
         const currentChar = result[i];
-        const baseChar = this.removeTone(currentChar.toLowerCase());
+        const currentCharLower = currentChar.toLowerCase();
 
-        if (baseChar === char.toLowerCase()) {
+        // Base character: bỏ dấu thanh, và đặc biệt xử lý đ→d
+        let baseChar = this.removeTone(currentCharLower);
+        if (baseChar === 'đ') baseChar = 'd';
+        if (baseChar === 'Đ') baseChar = 'D';
+
+        const targetChar = char.toLowerCase();
+        if (baseChar === targetChar) {
           if (lastIndex === -1) {
             lastIndex = i;
             lastChar = currentChar;
