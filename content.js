@@ -128,6 +128,7 @@
       }
 
       console.log("[UniViet] Successfully accessed iframe document!");
+      console.log("[UniViet] iframe.contentWindow.location.href:", iframe.contentWindow?.location?.href);
 
       // Attach event listeners to iframe document
       iframeDoc.addEventListener("beforeinput", handleBeforeInput, true);
@@ -135,6 +136,11 @@
       iframeDoc.addEventListener("keydown", handleKeyDown, true);
 
       console.log("[UniViet] Event listeners attached to iframe!");
+
+      // Test: add a simple test listener
+      iframeDoc.addEventListener("keydown", (e) => {
+        console.log("[UniViet-TEST] iframe keydown received:", e.key);
+      }, true);
     } catch (e) {
       console.log("[UniViet] Error accessing iframe:", e.message);
     }
@@ -244,9 +250,11 @@
 
   // Xử lý beforeinput - Event hiện đại (Google Docs, modern apps)
   function handleBeforeInput(event) {
-    // Debug for ALL beforeinput on Google Docs
-    if (window.location.hostname === "docs.google.com") {
+    // Debug for ALL beforeinput events
+    const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
+    if (isGDocsUrl) {
       console.log("[UniViet] beforeinput triggered:", {
+        url: window.location.href,
         inputType: event.inputType,
         data: event.data,
         target: event.target,
@@ -321,11 +329,32 @@
 
   // Xử lý keydown
   function handleKeyDown(event) {
+    // Debug for Google Docs
+    const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
+    if (isGDocsUrl && event.key && event.key.length === 1) {
+      console.log("[UniViet] keydown triggered:", {
+        url: window.location.href,
+        key: event.key,
+        target: event.target.tagName,
+        className: event.target.className
+      });
+    }
     // Không làm gì, chỉ để bắt các phím đặc biệt nếu cần
   }
 
   // Xử lý keypress - Fallback cho trình duyệt cũ
   function handleKeyPress(event) {
+    // Debug for Google Docs
+    const isGDocsUrl = window.location.hostname === "docs.google.com" || window.location.href === "about:blank";
+    if (isGDocsUrl) {
+      console.log("[UniViet] keypress triggered:", {
+        url: window.location.href,
+        key: event.key,
+        target: event.target.tagName,
+        className: event.target.className
+      });
+    }
+
     // Kiểm tra enabled
     if (!isEnabled || !univiet) return;
 
