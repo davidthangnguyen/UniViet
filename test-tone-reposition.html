@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tone Repositioning</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-case {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-case.pass {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .test-case.fail {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        h1 {
+            color: #333;
+        }
+        .result {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Tone Repositioning Logic</h1>
+    <div id="test-results"></div>
+
+    <script src="univiet-core.js"></script>
+    <script>
+        const univiet = new UniVietCore();
+        const resultsDiv = document.getElementById('test-results');
+
+        function testSequence(keys, expectedResult, description) {
+            let word = '';
+            let result = '';
+
+            for (let i = 0; i < keys.length; i++) {
+                const key = keys[i];
+                const processResult = univiet.processKey(word, key);
+
+                if (processResult && processResult.shouldReplace) {
+                    if (processResult.replaceAt !== undefined) {
+                        // Replace at specific position
+                        const replacePos = word.length - processResult.replaceAt - 1;
+                        word = word.substring(0, replacePos) + processResult.text + word.substring(replacePos + 1);
+                    } else if (processResult.deleteCount) {
+                        // Delete and add
+                        const deleteStart = word.length - processResult.deleteCount;
+                        word = word.substring(0, deleteStart) + processResult.text;
+                    } else {
+                        // Just add
+                        word = word + processResult.text;
+                    }
+                } else {
+                    // Normal character
+                    word = word + key;
+                }
+
+                result += `${word} `;
+            }
+
+            const passed = word === expectedResult;
+            const testCase = document.createElement('div');
+            testCase.className = `test-case ${passed ? 'pass' : 'fail'}`;
+            testCase.innerHTML = `
+                <strong>${description}</strong><br>
+                Input: <code>${keys.join('')}</code><br>
+                Expected: <code>${expectedResult}</code><br>
+                Got: <code>${word}</code><br>
+                Steps: ${result}<br>
+                <div class="result">${passed ? '✅ PASS' : '❌ FAIL'}</div>
+            `;
+            resultsDiv.appendChild(testCase);
+
+            return passed;
+        }
+
+        // Run tests
+        console.log('Running Tone Repositioning Tests...');
+
+        const tests = [
+            {
+                keys: ['h', 'i', 'f', 'e', 'e', 'n'],
+                expected: 'hiền',
+                description: 'Test 1: hifeen → hiền (bug chính)'
+            },
+            {
+                keys: ['t', 'o', 'f', 'i', 's'],
+                expected: 'tói',
+                description: 'Test 2: tofis → tói (2 nguyên âm + phụ âm cuối)'
+            },
+            {
+                keys: ['t', 'o', 'f', 'i'],
+                expected: 'tòi',
+                description: 'Test 3: tofi → tòi (2 nguyên âm không phụ âm cuối)'
+            },
+            {
+                keys: ['q', 'u', 'a', 'f', 'e', 'y'],
+                expected: 'quáy',
+                description: 'Test 4: quafey → quáy (3 nguyên âm, dấu ở giữa)'
+            },
+            {
+                keys: ['h', 'o', 'a', 'f', 't'],
+                expected: 'hoạt',
+                description: 'Test 5: hoaft → hoạt (undo dấu cho vần oa)'
+            },
+            {
+                keys: ['v', 'i', 'e', 'e', 's', 't'],
+                expected: 'việt',
+                description: 'Test 6: vieest → việt (ee → ê, dấu sắc)'
+            },
+            {
+                keys: ['d', 'i', 'e', 'e', 'u', 'f'],
+                expected: 'điều',
+                description: 'Test 7: dieeuf → điều (3 nguyên âm, dd, dấu huyền)'
+            },
+            {
+                keys: ['t', 'h', 'u', 'o', 'o', 'c', 'x'],
+                expected: 'thuộc',
+                description: 'Test 8: thuoocx → thuộc (oo → ô, dấu ngã)'
+            },
+            {
+                keys: ['c', 'h', 'i', 'e', 'e', 'f', 'n'],
+                expected: 'chiền',
+                description: 'Test 9: chieefn → chiền (dấu huyền sau khi ee)'
+            },
+            {
+                keys: ['n', 'g', 'h', 'i', 'e', 'e', 'r', 'm'],
+                expected: 'nghiểm',
+                description: 'Test 10: nghieerm → nghiểm (dấu hỏi + phụ âm cuối)'
+            }
+        ];
+
+        let passed = 0;
+        let failed = 0;
+
+        tests.forEach(test => {
+            if (testSequence(test.keys, test.expected, test.description)) {
+                passed++;
+            } else {
+                failed++;
+            }
+        });
+
+        // Summary
+        const summary = document.createElement('div');
+        summary.style.marginTop = '30px';
+        summary.style.padding = '20px';
+        summary.style.background = '#f8f9fa';
+        summary.style.borderRadius = '5px';
+        summary.innerHTML = `
+            <h2>📊 Test Summary</h2>
+            <p>Total: ${tests.length} tests</p>
+            <p style="color: green;">✅ Passed: ${passed}</p>
+            <p style="color: red;">❌ Failed: ${failed}</p>
+        `;
+        resultsDiv.appendChild(summary);
+
+        console.log(`Tests completed: ${passed} passed, ${failed} failed`);
+    </script>
+</body>
+</html>
