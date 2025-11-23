@@ -1,6 +1,6 @@
 /**
- * UniViet Core Engine v1.0.0
- * Bộ gõ tiếng Việt TELEX với quy tắc W đặc biệt
+ * UniViet Core Engine v1.0.1
+ * Bộ gõ tiếng Việt TELEX đầy đủ
  */
 
 class UniVietCore {
