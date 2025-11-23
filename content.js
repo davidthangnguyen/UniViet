@@ -41,6 +41,9 @@
     // Keypress để xử lý chính
     document.addEventListener("keypress", handleKeyPress, true);
 
+    // THÊM: Keyup để xử lý input events (cho các site dùng custom handlers)
+    document.addEventListener("keyup", handleKeyUp, true);
+
     // Lắng nghe message từ background
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === "toggleUniViet") {
@@ -84,47 +87,85 @@
 
   // Xử lý keydown
   function handleKeyDown(event) {
-    // Không làm gì, chỉ để bắt các phím đặc biệt nếu cần
+    // DEBUG: Log keydown events
+    const element = event.target;
+    if (shouldProcess(element)) {
+      console.log('[UniViet] keydown:', event.key, 'target:', element.tagName, element.type);
+    }
   }
 
   // Xử lý keypress
   function handleKeyPress(event) {
+    // DEBUG: Log keypress events
+    const element = event.target;
+    console.log('[UniViet] keypress triggered:', event.key, 'enabled:', isEnabled);
+
     // Kiểm tra enabled
-    if (!isEnabled || !univiet) return;
+    if (!isEnabled || !univiet) {
+      console.log('[UniViet] Skipped: enabled=', isEnabled, 'univiet=', !!univiet);
+      return;
+    }
 
     // Kiểm tra Ctrl/Alt (trừ một số phím đặc biệt)
-    if (event.ctrlKey || event.metaKey) return;
-    if (event.altKey) return;
+    if (event.ctrlKey || event.metaKey) {
+      console.log('[UniViet] Skipped: Ctrl/Meta key');
+      return;
+    }
+    if (event.altKey) {
+      console.log('[UniViet] Skipped: Alt key');
+      return;
+    }
 
     // Lấy element
-    const element = event.target;
-    if (!shouldProcess(element)) return;
+    if (!shouldProcess(element)) {
+      console.log('[UniViet] Skipped: shouldProcess=false', element);
+      return;
+    }
 
     // Lấy key
     const key = event.key;
-    if (!key || key.length !== 1) return;
+    if (!key || key.length !== 1) {
+      console.log('[UniViet] Skipped: invalid key length');
+      return;
+    }
 
     // Kiểm tra có phải chữ cái không
-    if (!/[a-zA-Z]/.test(key)) return;
+    if (!/[a-zA-Z]/.test(key)) {
+      console.log('[UniViet] Skipped: not a letter');
+      return;
+    }
+
+    console.log('[UniViet] Processing key:', key);
 
     // Lấy thông tin text hiện tại
     const textInfo = univiet.getTextInfo(element);
-    if (!textInfo) return;
+    if (!textInfo) {
+      console.log('[UniViet] Skipped: no textInfo');
+      return;
+    }
 
     // Lấy từ hiện tại
     const wordInfo = univiet.getCurrentWord(textInfo.value, textInfo.start);
+    console.log('[UniViet] Current word:', wordInfo.word);
 
     // Xử lý phím
     const result = univiet.processKey(wordInfo.word, key);
+    console.log('[UniViet] Process result:', result);
 
     if (result && result.shouldReplace) {
       // Ngăn không cho trình duyệt xử lý phím
       event.preventDefault();
       event.stopPropagation();
 
+      console.log('[UniViet] Replacing text with:', result.text);
       // Thay thế text
       univiet.replaceText(textInfo, result, wordInfo);
     }
+  }
+
+  // Xử lý keyup (fallback cho các site dùng custom event handlers)
+  function handleKeyUp(event) {
+    // Tạm thời không dùng, chỉ để debug
   }
 
   // Khởi động
