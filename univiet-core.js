@@ -318,6 +318,96 @@ class UniVietCore {
   }
 
   /**
+   * Áp dụng tất cả transformations TELEX lên toàn bộ từ
+   * Xử lý các patterns cách xa nhau (vd: dieeudf → điều)
+   *
+   * @param {string} text - Chuỗi cần normalize
+   * @returns {string} - Chuỗi đã được transform
+   */
+  applyAllTransformations(text) {
+    if (!text || text.length === 0) return text;
+
+    let result = text;
+    let changed = true;
+    let iterations = 0;
+    const MAX_ITERATIONS = 10; // Tránh infinite loop
+
+    // Lặp cho đến khi không còn thay đổi
+    while (changed && iterations < MAX_ITERATIONS) {
+      changed = false;
+      iterations++;
+      let newResult = result;
+
+      // 1. Xử lý dd → đ, DD → Đ (scan từ đầu đến cuối)
+      newResult = newResult.replace(/dd/g, 'đ').replace(/DD/g, 'Đ').replace(/Dd/g, 'Đ');
+
+      // 2. Xử lý aa → â, AA → Â
+      newResult = newResult.replace(/aa/g, 'â').replace(/AA/g, 'Â').replace(/Aa/g, 'Â');
+
+      // 3. Xử lý ee → ê, EE → Ê
+      newResult = newResult.replace(/ee/g, 'ê').replace(/EE/g, 'Ê').replace(/Ee/g, 'Ê');
+
+      // 4. Xử lý oo → ô, OO → Ô
+      newResult = newResult.replace(/oo/g, 'ô').replace(/OO/g, 'Ô').replace(/Oo/g, 'Ô');
+
+      // 5. Xử lý các quy tắc W phức tạp
+      // 5.1. uow → ươ, uôw → ươ
+      newResult = newResult.replace(/uow/g, 'ươ')
+                           .replace(/uôw/g, 'ươ')
+                           .replace(/UOW/g, 'ƯƠ')
+                           .replace(/UÔW/g, 'ƯƠ')
+                           .replace(/Uow/g, 'Ươ')
+                           .replace(/Uôw/g, 'Ươ');
+
+      // 5.2. aw → ă (không phải sau ơ, ư, w)
+      newResult = newResult.replace(/([^ơưw])aw/g, '$1ă')
+                           .replace(/^aw/g, 'ă')
+                           .replace(/([^ƠƯW])AW/g, '$1Ă')
+                           .replace(/^AW/g, 'Ă')
+                           .replace(/([^ƠƯW])Aw/g, '$1Ă')
+                           .replace(/^Aw/g, 'Ă');
+
+      // 5.3. ow → ơ (không phải sau ư)
+      newResult = newResult.replace(/([^ư])ow/g, '$1ơ')
+                           .replace(/^ow/g, 'ơ')
+                           .replace(/([^Ư])OW/g, '$1Ơ')
+                           .replace(/^OW/g, 'Ơ')
+                           .replace(/([^Ư])Ow/g, '$1Ơ')
+                           .replace(/^Ow/g, 'Ơ');
+
+      // 5.4. uw → ư (không phải sau q)
+      newResult = newResult.replace(/([^q])uw/g, '$1ư')
+                           .replace(/^uw/g, 'ư')
+                           .replace(/([^Q])UW/g, '$1Ư')
+                           .replace(/^UW/g, 'Ư')
+                           .replace(/([^Q])Uw/g, '$1Ư')
+                           .replace(/^Uw/g, 'Ư');
+
+      // 5.5. ww → wư (thêm ư sau w)
+      newResult = newResult.replace(/ww/g, 'wư').replace(/WW/g, 'WƯ').replace(/Ww/g, 'Wư');
+
+      // 5.6. w đơn → ư (không phải trong các pattern trên)
+      // Chỉ replace w đứng độc lập (không phải sau ư, ơ, hoặc trước w)
+      newResult = newResult.replace(/([^ươw])w([^w])/g, '$1ư$2')
+                           .replace(/^w([^w])/g, 'ư$1')
+                           .replace(/([^ươw])w$/g, '$1ư')
+                           .replace(/^w$/g, 'ư')
+                           .replace(/([^ƯƠW])W([^W])/g, '$1Ư$2')
+                           .replace(/^W([^W])/g, 'Ư$1')
+                           .replace(/([^ƯƠW])W$/g, '$1Ư')
+                           .replace(/^W$/g, 'Ư');
+
+      // Kiểm tra xem có thay đổi không
+      if (newResult !== result) {
+        changed = true;
+        result = newResult;
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Xử lý phím vừa nhấn với TELEX
    */
   processKey(word, key) {
@@ -554,6 +644,25 @@ class UniVietCore {
           };
         }
       }
+    }
+
+    // ================================================================
+    // 8. Xử lý transformations cách xa (full-word processing)
+    // ================================================================
+    // Nếu không có xử lý đặc biệt nào ở trên, thử apply tất cả transformations
+    // lên toàn bộ từ để xử lý các patterns cách xa (vd: dieeudf → điều)
+
+    // Tạo từ mới bằng cách thêm key vào cuối
+    const newWord = word + key;
+    const normalized = this.applyAllTransformations(newWord);
+
+    // Nếu có transformation xảy ra
+    if (normalized !== newWord) {
+      return {
+        text: normalized,
+        shouldReplace: true,
+        deleteCount: word.length, // Replace toàn bộ word cũ
+      };
     }
 
     return null;
