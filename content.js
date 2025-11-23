@@ -351,20 +351,50 @@
         url: window.location.href,
         key: event.key,
         target: event.target.tagName,
-        className: event.target.className
+        className: event.target.className,
+        isContentEditable: event.target.isContentEditable,
+        id: event.target.id
       });
     }
 
     // Kiểm tra enabled
-    if (!isEnabled || !univiet) return;
+    if (!isEnabled || !univiet) {
+      if (isGDocsUrl) console.log("[UniViet] keypress: Extension disabled or univiet not loaded");
+      return;
+    }
+
+    if (isGDocsUrl) console.log("[UniViet] keypress: Checking Ctrl/Alt...");
 
     // Kiểm tra Ctrl/Alt (trừ một số phím đặc biệt)
-    if (event.ctrlKey || event.metaKey) return;
-    if (event.altKey) return;
+    if (event.ctrlKey || event.metaKey) {
+      if (isGDocsUrl) console.log("[UniViet] keypress: Ctrl/Meta key, skipping");
+      return;
+    }
+    if (event.altKey) {
+      if (isGDocsUrl) console.log("[UniViet] keypress: Alt key, skipping");
+      return;
+    }
+
+    if (isGDocsUrl) console.log("[UniViet] keypress: Checking shouldProcess...");
 
     // Lấy element
     const element = event.target;
-    if (!shouldProcess(element)) return;
+    const shouldProc = shouldProcess(element);
+
+    if (isGDocsUrl) {
+      console.log("[UniViet] keypress: shouldProcess returned:", shouldProc);
+      if (!shouldProc) {
+        console.log("[UniViet] keypress: Element details:", {
+          tagName: element.tagName,
+          type: element.type,
+          readOnly: element.readOnly,
+          disabled: element.disabled,
+          isContentEditable: element.isContentEditable
+        });
+      }
+    }
+
+    if (!shouldProc) return;
 
     // Lấy key
     const key = event.key;
