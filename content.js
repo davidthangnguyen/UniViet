@@ -398,30 +398,62 @@
 
     if (!shouldProc) return;
 
+    if (isGDocsUrl) console.log("[UniViet] keypress: Getting key...");
+
     // Lấy key
     const key = event.key;
-    if (!key || key.length !== 1) return;
+    if (!key || key.length !== 1) {
+      if (isGDocsUrl) console.log("[UniViet] keypress: Invalid key length:", key?.length);
+      return;
+    }
+
+    if (isGDocsUrl) console.log("[UniViet] keypress: Key is:", key);
 
     // Kiểm tra có phải chữ cái không
-    if (!/[a-zA-Z]/.test(key)) return;
+    if (!/[a-zA-Z]/.test(key)) {
+      if (isGDocsUrl) console.log("[UniViet] keypress: Not a letter, skipping");
+      return;
+    }
+
+    if (isGDocsUrl) console.log("[UniViet] keypress: Getting textInfo...");
 
     // Lấy thông tin text hiện tại
     const textInfo = univiet.getTextInfo(element);
-    if (!textInfo) return;
+
+    if (isGDocsUrl) console.log("[UniViet] keypress: textInfo:", textInfo);
+
+    if (!textInfo) {
+      if (isGDocsUrl) console.log("[UniViet] keypress: textInfo is null, skipping");
+      return;
+    }
+
+    if (isGDocsUrl) console.log("[UniViet] keypress: Getting wordInfo...");
 
     // Lấy từ hiện tại
     const wordInfo = univiet.getCurrentWord(textInfo.value, textInfo.start);
 
+    if (isGDocsUrl) console.log("[UniViet] keypress: wordInfo:", wordInfo);
+
+    if (isGDocsUrl) console.log("[UniViet] keypress: Processing key...");
+
     // Xử lý phím
     const result = univiet.processKey(wordInfo.word, key);
 
+    if (isGDocsUrl) console.log("[UniViet] keypress: result:", result);
+
     if (result && result.shouldReplace) {
+      if (isGDocsUrl) console.log("[UniViet] keypress: Replacing text...");
+
       // Ngăn không cho trình duyệt xử lý phím
       event.preventDefault();
       event.stopPropagation();
 
       // Thay thế text
       univiet.replaceText(textInfo, result, wordInfo);
+
+      if (isGDocsUrl) console.log("[UniViet] keypress: Text replaced!");
+    } else {
+      if (isGDocsUrl) console.log("[UniViet] keypress: No replacement needed");
     }
   }
 
