@@ -531,6 +531,72 @@ class UniVietCore {
   }
 
   /**
+   * Kiểm tra và di chuyển dấu thanh sau khi transform (aa→â, ee→ê, oo→ô)
+   * VD: tìe + e → tìê, nhưng cần di chuyển dấu → tiề
+   *
+   * @returns {object} {text: string, deleteCount: number}
+   */
+  repositionToneAfterTransform(word, transformedChar, deleteCount) {
+    // Tìm dấu thanh trong từ gốc
+    let existingTone = null;
+    let toneCharIndex = -1;
+
+    for (let i = word.length - 1; i >= 0; i--) {
+      const tone = this.getTone(word[i]);
+      if (tone) {
+        existingTone = tone;
+        toneCharIndex = i;
+        break;
+      }
+    }
+
+    // Nếu không có dấu thanh, return transformation đơn giản
+    if (!existingTone) {
+      return {
+        text: transformedChar,
+        deleteCount: deleteCount,
+      };
+    }
+
+    // Tạo từ mới sau khi transform (bỏ dấu thanh ra trước)
+    const wordWithoutTone =
+      word.substring(0, toneCharIndex) +
+      this.removeTone(word[toneCharIndex]) +
+      word.substring(toneCharIndex + 1);
+
+    // Áp dụng transformation
+    const deleteStart = wordWithoutTone.length - deleteCount;
+    const newWord =
+      wordWithoutTone.substring(0, deleteStart) + transformedChar;
+
+    // Tính toán lại vị trí đặt dấu
+    const newTonePos = this.findTonePosition(newWord);
+
+    // Nếu không tìm được vị trí mới, return transformation đơn giản
+    if (newTonePos < 0) {
+      return {
+        text: transformedChar,
+        deleteCount: deleteCount,
+      };
+    }
+
+    // Đặt dấu vào vị trí mới
+    const charAtNewPos = newWord[newTonePos];
+    const newCharWithTone = this.addTone(charAtNewPos, existingTone);
+
+    // Trả về toàn bộ từ mới với dấu đã di chuyển
+    const result =
+      newWord.substring(0, newTonePos) +
+      newCharWithTone +
+      newWord.substring(newTonePos + 1);
+
+    return {
+      text: result,
+      deleteCount: word.length, // Xóa toàn bộ từ cũ
+    };
+  }
+
+  /**
    * Xử lý phím vừa nhấn với TELEX
    */
   processKey(word, key) {
@@ -582,7 +648,11 @@ class UniVietCore {
     // Khi người dùng gõ thêm nguyên âm sau khi đã đặt dấu thanh,
     // cần tính toán lại vị trí đặt dấu theo quy tắc tiếng Việt
     // VD: hif → hì, nhưng hifee → hiền (không phải hìên)
-    if (this.isVowel(key)) {
+    //
+    // QUAN TRỌNG: Không xử lý các key đặc biệt (a, e, o) vì chúng có
+    // transformations riêng (aa→â, ee→ê, oo→ô) cần chạy trước
+    const isTransformKey = ["a", "e", "o"].includes(key.toLowerCase());
+    if (this.isVowel(key) && !isTransformKey) {
       // Kiểm tra từ hiện tại có dấu thanh không
       let existingTone = null;
       let toneCharIndex = -1;
@@ -750,35 +820,57 @@ class UniVietCore {
     }
 
     // ================================================================
-    // 4. Xử lý aa → â, AA → Â
+    // 4. Xử lý aa → â, AA → Â (với tone repositioning)
     // ================================================================
     if (key.toLowerCase() === "a" && lastCharLower === "a") {
+      const transformedChar = this.isUpperCase(lastChar) ? "Â" : "â";
+      const result = this.repositionToneAfterTransform(
+        word,
+        transformedChar,
+        1,
+      );
+
       return {
-        text: this.isUpperCase(lastChar) ? "Â" : "â",
+        text: result.text,
         shouldReplace: true,
-        deleteCount: 1,
+        deleteCount: result.deleteCount,
       };
     }
 
     // ================================================================
-    // 5. Xử lý ee → ê, EE → Ê
+    // 5. Xử lý ee → ê, EE → Ê (với tone repositioning)
     // ================================================================
     if (key.toLowerCase() === "e" && lastCharLower === "e") {
+      const transformedChar = this.isUpperCase(lastChar) ? "Ê" : "ê";
+
+      const result = this.repositionToneAfterTransform(
+        word,
+        transformedChar,
+        1,
+      );
+
       return {
-        text: this.isUpperCase(lastChar) ? "Ê" : "ê",
+        text: result.text,
         shouldReplace: true,
-        deleteCount: 1,
+        deleteCount: result.deleteCount,
       };
     }
 
     // ================================================================
-    // 6. Xử lý oo → ô, OO → Ô
+    // 6. Xử lý oo → ô, OO → Ô (với tone repositioning)
     // ================================================================
     if (key.toLowerCase() === "o" && lastCharLower === "o") {
+      const transformedChar = this.isUpperCase(lastChar) ? "Ô" : "ô";
+      const result = this.repositionToneAfterTransform(
+        word,
+        transformedChar,
+        1,
+      );
+
       return {
-        text: this.isUpperCase(lastChar) ? "Ô" : "ô",
+        text: result.text,
         shouldReplace: true,
-        deleteCount: 1,
+        deleteCount: result.deleteCount,
       };
     }
 

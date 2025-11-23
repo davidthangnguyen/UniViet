@@ -23,7 +23,7 @@ function testSequence(keys, expectedResult, description) {
                 // Replace at specific position
                 const replacePos = word.length - processResult.replaceAt - 1;
                 word = word.substring(0, replacePos) + processResult.text + word.substring(replacePos + 1);
-            } else if (processResult.deleteCount) {
+            } else if (processResult.deleteCount !== undefined && processResult.deleteCount > 0) {
                 // Delete and add
                 const deleteStart = word.length - processResult.deleteCount;
                 word = word.substring(0, deleteStart) + processResult.text;
@@ -54,6 +54,11 @@ console.log('🧪 Running Tone Repositioning Tests...\n');
 console.log('='.repeat(70));
 
 const tests = [
+    {
+        keys: ['t', 'i', 'f', 'e', 'e'],
+        expected: 'tiề',
+        description: 'Test 0: tifee → tiề (bug mới)'
+    },
     {
         keys: ['h', 'i', 'f', 'e', 'e', 'n'],
         expected: 'hiền',
