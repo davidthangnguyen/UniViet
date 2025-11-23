@@ -320,9 +320,10 @@ class UniVietCore {
   /**
    * Merge cặp ký tự giống nhau gần nhất thành ký tự đích
    * Ví dụ: mergePairs("dieud", "d", "đ") → "điêu"
+   *        mergePairs("goro", "o", "ô") → "gổ" (giữ dấu hỏi từ ỏ)
    *
    * @param {string} text - Chuỗi cần xử lý
-   * @param {string} char - Ký tự cần tìm cặp
+   * @param {string} char - Ký tự cần tìm cặp (base character không dấu)
    * @param {string} target - Ký tự đích sau khi merge
    * @returns {string} - Chuỗi đã merge
    */
@@ -335,15 +336,23 @@ class UniVietCore {
       changed = false;
 
       // Tìm 2 ký tự "char" gần nhau nhất (từ cuối lên)
+      // So sánh base character (bỏ dấu thanh) để match cả "o" và "õ", "ỏ", v.v.
       let lastIndex = -1;
+      let lastChar = '';
       let secondLastIndex = -1;
+      let secondLastChar = '';
 
       for (let i = result.length - 1; i >= 0; i--) {
-        if (result[i] === char) {
+        const currentChar = result[i];
+        const baseChar = this.removeTone(currentChar.toLowerCase());
+
+        if (baseChar === char.toLowerCase()) {
           if (lastIndex === -1) {
             lastIndex = i;
+            lastChar = currentChar;
           } else {
             secondLastIndex = i;
+            secondLastChar = currentChar;
             break;
           }
         }
@@ -351,9 +360,25 @@ class UniVietCore {
 
       // Nếu tìm thấy ít nhất 2 ký tự
       if (secondLastIndex >= 0 && lastIndex >= 0) {
-        // Merge: xóa cả 2 ký tự và thay bằng target
+        // Lấy dấu thanh từ ký tự đầu tiên (nếu có)
+        const tone1 = this.getTone(secondLastChar);
+        const tone2 = this.getTone(lastChar);
+        const toneToKeep = tone1 || tone2; // Ưu tiên dấu từ ký tự đầu
+
+        // Xác định target character (giữ case)
+        let finalTarget = target;
+        if (this.isUpperCase(secondLastChar)) {
+          finalTarget = this.toUpperCase(target);
+        }
+
+        // Apply dấu thanh lên target (nếu có)
+        if (toneToKeep) {
+          finalTarget = this.addTone(finalTarget, toneToKeep);
+        }
+
+        // Merge: xóa cả 2 ký tự và thay bằng target (có dấu thanh)
         result = result.substring(0, secondLastIndex) +
-                 target +
+                 finalTarget +
                  result.substring(secondLastIndex + 1, lastIndex) +
                  result.substring(lastIndex + 1);
         changed = true;
