@@ -318,6 +318,170 @@ class UniVietCore {
   }
 
   /**
+   * Merge cặp ký tự giống nhau gần nhất thành ký tự đích
+   * Ví dụ: mergePairs("dieud", "d", "đ") → "điêu"
+   *        mergePairs("goro", "o", "ô") → "gổ" (giữ dấu hỏi từ ỏ)
+   *
+   * @param {string} text - Chuỗi cần xử lý
+   * @param {string} char - Ký tự cần tìm cặp (base character không dấu)
+   * @param {string} target - Ký tự đích sau khi merge
+   * @returns {string} - Chuỗi đã merge
+   */
+  mergePairs(text, char, target) {
+    let result = text;
+    let changed = true;
+
+    // Lặp cho đến khi không còn cặp nào
+    while (changed) {
+      changed = false;
+
+      // Tìm 2 ký tự "char" gần nhau nhất (từ cuối lên)
+      // So sánh base character (bỏ dấu thanh) để match cả "o" và "õ", "ỏ", v.v.
+      let lastIndex = -1;
+      let lastChar = '';
+      let secondLastIndex = -1;
+      let secondLastChar = '';
+
+      for (let i = result.length - 1; i >= 0; i--) {
+        const currentChar = result[i];
+        const baseChar = this.removeTone(currentChar.toLowerCase());
+
+        if (baseChar === char.toLowerCase()) {
+          if (lastIndex === -1) {
+            lastIndex = i;
+            lastChar = currentChar;
+          } else {
+            secondLastIndex = i;
+            secondLastChar = currentChar;
+            break;
+          }
+        }
+      }
+
+      // Nếu tìm thấy ít nhất 2 ký tự
+      if (secondLastIndex >= 0 && lastIndex >= 0) {
+        // Lấy dấu thanh từ ký tự đầu tiên (nếu có)
+        const tone1 = this.getTone(secondLastChar);
+        const tone2 = this.getTone(lastChar);
+        const toneToKeep = tone1 || tone2; // Ưu tiên dấu từ ký tự đầu
+
+        // Xác định target character (giữ case)
+        let finalTarget = target;
+        if (this.isUpperCase(secondLastChar)) {
+          finalTarget = this.toUpperCase(target);
+        }
+
+        // Apply dấu thanh lên target (nếu có)
+        if (toneToKeep) {
+          finalTarget = this.addTone(finalTarget, toneToKeep);
+        }
+
+        // Merge: xóa cả 2 ký tự và thay bằng target (có dấu thanh)
+        result = result.substring(0, secondLastIndex) +
+                 finalTarget +
+                 result.substring(secondLastIndex + 1, lastIndex) +
+                 result.substring(lastIndex + 1);
+        changed = true;
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Áp dụng tất cả transformations TELEX lên toàn bộ từ
+   * Xử lý các patterns cách xa nhau (vd: dieeudf → điều)
+   *
+   * @param {string} text - Chuỗi cần normalize
+   * @returns {string} - Chuỗi đã được transform
+   */
+  applyAllTransformations(text) {
+    if (!text || text.length === 0) return text;
+
+    let result = text;
+    let changed = true;
+    let iterations = 0;
+    const MAX_ITERATIONS = 10; // Tránh infinite loop
+
+    // Lặp cho đến khi không còn thay đổi
+    while (changed && iterations < MAX_ITERATIONS) {
+      changed = false;
+      iterations++;
+      const oldResult = result;
+
+      // 1. Xử lý các cặp ký tự giống nhau (cả liền nhau và cách xa)
+      // dd → đ (scan từ cuối lên để merge cặp gần nhất trước)
+      result = this.mergePairs(result, 'd', 'đ');
+      result = this.mergePairs(result, 'D', 'Đ');
+
+      // aa → â
+      result = this.mergePairs(result, 'a', 'â');
+      result = this.mergePairs(result, 'A', 'Â');
+
+      // ee → ê
+      result = this.mergePairs(result, 'e', 'ê');
+      result = this.mergePairs(result, 'E', 'Ê');
+
+      // oo → ô
+      result = this.mergePairs(result, 'o', 'ô');
+      result = this.mergePairs(result, 'O', 'Ô');
+
+      // 2. Xử lý các quy tắc W phức tạp (chỉ cho patterns liền nhau)
+      // 2.1. uow → ươ, uôw → ươ
+      result = result.replace(/uow/g, 'ươ')
+                     .replace(/uôw/g, 'ươ')
+                     .replace(/UOW/g, 'ƯƠ')
+                     .replace(/UÔW/g, 'ƯƠ')
+                     .replace(/Uow/g, 'Ươ')
+                     .replace(/Uôw/g, 'Ươ');
+
+      // 2.2. aw → ă
+      result = result.replace(/([^ơưw])aw/g, '$1ă')
+                     .replace(/^aw/g, 'ă')
+                     .replace(/([^ƠƯW])AW/g, '$1Ă')
+                     .replace(/^AW/g, 'Ă')
+                     .replace(/([^ƠƯW])Aw/g, '$1Ă')
+                     .replace(/^Aw/g, 'Ă');
+
+      // 2.3. ow → ơ
+      result = result.replace(/([^ư])ow/g, '$1ơ')
+                     .replace(/^ow/g, 'ơ')
+                     .replace(/([^Ư])OW/g, '$1Ơ')
+                     .replace(/^OW/g, 'Ơ')
+                     .replace(/([^Ư])Ow/g, '$1Ơ')
+                     .replace(/^Ow/g, 'Ơ');
+
+      // 2.4. uw → ư (không phải sau q)
+      result = result.replace(/([^q])uw/g, '$1ư')
+                     .replace(/^uw/g, 'ư')
+                     .replace(/([^Q])UW/g, '$1Ư')
+                     .replace(/^UW/g, 'Ư')
+                     .replace(/([^Q])Uw/g, '$1Ư')
+                     .replace(/^Uw/g, 'Ư');
+
+      // 2.5. ww → wư
+      result = result.replace(/ww/g, 'wư').replace(/WW/g, 'WƯ').replace(/Ww/g, 'Wư');
+
+      // 2.6. w đơn → ư
+      result = result.replace(/([^ươw])w([^w])/g, '$1ư$2')
+                     .replace(/^w([^w])/g, 'ư$1')
+                     .replace(/([^ươw])w$/g, '$1ư')
+                     .replace(/^w$/g, 'ư')
+                     .replace(/([^ƯƠW])W([^W])/g, '$1Ư$2')
+                     .replace(/^W([^W])/g, 'Ư$1')
+                     .replace(/([^ƯƠW])W$/g, '$1Ư')
+                     .replace(/^W$/g, 'Ư');
+
+      // Kiểm tra xem có thay đổi không
+      if (result !== oldResult) {
+        changed = true;
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Xử lý phím vừa nhấn với TELEX
    */
   processKey(word, key) {
@@ -554,6 +718,25 @@ class UniVietCore {
           };
         }
       }
+    }
+
+    // ================================================================
+    // 8. Xử lý transformations cách xa (full-word processing)
+    // ================================================================
+    // Nếu không có xử lý đặc biệt nào ở trên, thử apply tất cả transformations
+    // lên toàn bộ từ để xử lý các patterns cách xa (vd: dieeudf → điều)
+
+    // Tạo từ mới bằng cách thêm key vào cuối
+    const newWord = word + key;
+    const normalized = this.applyAllTransformations(newWord);
+
+    // Nếu có transformation xảy ra
+    if (normalized !== newWord) {
+      return {
+        text: normalized,
+        shouldReplace: true,
+        deleteCount: word.length, // Replace toàn bộ word cũ
+      };
     }
 
     return null;
