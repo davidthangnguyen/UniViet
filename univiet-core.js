@@ -216,21 +216,32 @@ class UniVietCore {
 
   /**
    * Lấy từ hiện tại đang gõ
+   * Scan cả backward và forward từ cursor position
    */
   getCurrentWord(text, position) {
-    let start = position - 1;
-    let word = "";
+    if (!text || text.length === 0) {
+      return { word: "", startPos: 0, endPos: 0 };
+    }
 
-    // Lùi về để lấy từ
-    while (start >= 0 && this.isLetter(text[start])) {
-      word = text[start] + word;
+    let start = position;
+    let end = position;
+
+    // Scan backward để tìm đầu từ
+    while (start > 0 && this.isLetter(text[start - 1])) {
       start--;
     }
 
+    // Scan forward để tìm cuối từ
+    while (end < text.length && this.isLetter(text[end])) {
+      end++;
+    }
+
+    const word = text.substring(start, end);
+
     return {
       word: word,
-      startPos: start + 1,
-      endPos: position,
+      startPos: start,
+      endPos: end,
     };
   }
 
