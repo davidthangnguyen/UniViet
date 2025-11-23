@@ -318,6 +318,52 @@ class UniVietCore {
   }
 
   /**
+   * Merge cặp ký tự giống nhau gần nhất thành ký tự đích
+   * Ví dụ: mergePairs("dieud", "d", "đ") → "điêu"
+   *
+   * @param {string} text - Chuỗi cần xử lý
+   * @param {string} char - Ký tự cần tìm cặp
+   * @param {string} target - Ký tự đích sau khi merge
+   * @returns {string} - Chuỗi đã merge
+   */
+  mergePairs(text, char, target) {
+    let result = text;
+    let changed = true;
+
+    // Lặp cho đến khi không còn cặp nào
+    while (changed) {
+      changed = false;
+
+      // Tìm 2 ký tự "char" gần nhau nhất (từ cuối lên)
+      let lastIndex = -1;
+      let secondLastIndex = -1;
+
+      for (let i = result.length - 1; i >= 0; i--) {
+        if (result[i] === char) {
+          if (lastIndex === -1) {
+            lastIndex = i;
+          } else {
+            secondLastIndex = i;
+            break;
+          }
+        }
+      }
+
+      // Nếu tìm thấy ít nhất 2 ký tự
+      if (secondLastIndex >= 0 && lastIndex >= 0) {
+        // Merge: xóa cả 2 ký tự và thay bằng target
+        result = result.substring(0, secondLastIndex) +
+                 target +
+                 result.substring(secondLastIndex + 1, lastIndex) +
+                 result.substring(lastIndex + 1);
+        changed = true;
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Áp dụng tất cả transformations TELEX lên toàn bộ từ
    * Xử lý các patterns cách xa nhau (vd: dieeudf → điều)
    *
@@ -336,71 +382,74 @@ class UniVietCore {
     while (changed && iterations < MAX_ITERATIONS) {
       changed = false;
       iterations++;
-      let newResult = result;
+      const oldResult = result;
 
-      // 1. Xử lý dd → đ, DD → Đ (scan từ đầu đến cuối)
-      newResult = newResult.replace(/dd/g, 'đ').replace(/DD/g, 'Đ').replace(/Dd/g, 'Đ');
+      // 1. Xử lý các cặp ký tự giống nhau (cả liền nhau và cách xa)
+      // dd → đ (scan từ cuối lên để merge cặp gần nhất trước)
+      result = this.mergePairs(result, 'd', 'đ');
+      result = this.mergePairs(result, 'D', 'Đ');
 
-      // 2. Xử lý aa → â, AA → Â
-      newResult = newResult.replace(/aa/g, 'â').replace(/AA/g, 'Â').replace(/Aa/g, 'Â');
+      // aa → â
+      result = this.mergePairs(result, 'a', 'â');
+      result = this.mergePairs(result, 'A', 'Â');
 
-      // 3. Xử lý ee → ê, EE → Ê
-      newResult = newResult.replace(/ee/g, 'ê').replace(/EE/g, 'Ê').replace(/Ee/g, 'Ê');
+      // ee → ê
+      result = this.mergePairs(result, 'e', 'ê');
+      result = this.mergePairs(result, 'E', 'Ê');
 
-      // 4. Xử lý oo → ô, OO → Ô
-      newResult = newResult.replace(/oo/g, 'ô').replace(/OO/g, 'Ô').replace(/Oo/g, 'Ô');
+      // oo → ô
+      result = this.mergePairs(result, 'o', 'ô');
+      result = this.mergePairs(result, 'O', 'Ô');
 
-      // 5. Xử lý các quy tắc W phức tạp
-      // 5.1. uow → ươ, uôw → ươ
-      newResult = newResult.replace(/uow/g, 'ươ')
-                           .replace(/uôw/g, 'ươ')
-                           .replace(/UOW/g, 'ƯƠ')
-                           .replace(/UÔW/g, 'ƯƠ')
-                           .replace(/Uow/g, 'Ươ')
-                           .replace(/Uôw/g, 'Ươ');
+      // 2. Xử lý các quy tắc W phức tạp (chỉ cho patterns liền nhau)
+      // 2.1. uow → ươ, uôw → ươ
+      result = result.replace(/uow/g, 'ươ')
+                     .replace(/uôw/g, 'ươ')
+                     .replace(/UOW/g, 'ƯƠ')
+                     .replace(/UÔW/g, 'ƯƠ')
+                     .replace(/Uow/g, 'Ươ')
+                     .replace(/Uôw/g, 'Ươ');
 
-      // 5.2. aw → ă (không phải sau ơ, ư, w)
-      newResult = newResult.replace(/([^ơưw])aw/g, '$1ă')
-                           .replace(/^aw/g, 'ă')
-                           .replace(/([^ƠƯW])AW/g, '$1Ă')
-                           .replace(/^AW/g, 'Ă')
-                           .replace(/([^ƠƯW])Aw/g, '$1Ă')
-                           .replace(/^Aw/g, 'Ă');
+      // 2.2. aw → ă
+      result = result.replace(/([^ơưw])aw/g, '$1ă')
+                     .replace(/^aw/g, 'ă')
+                     .replace(/([^ƠƯW])AW/g, '$1Ă')
+                     .replace(/^AW/g, 'Ă')
+                     .replace(/([^ƠƯW])Aw/g, '$1Ă')
+                     .replace(/^Aw/g, 'Ă');
 
-      // 5.3. ow → ơ (không phải sau ư)
-      newResult = newResult.replace(/([^ư])ow/g, '$1ơ')
-                           .replace(/^ow/g, 'ơ')
-                           .replace(/([^Ư])OW/g, '$1Ơ')
-                           .replace(/^OW/g, 'Ơ')
-                           .replace(/([^Ư])Ow/g, '$1Ơ')
-                           .replace(/^Ow/g, 'Ơ');
+      // 2.3. ow → ơ
+      result = result.replace(/([^ư])ow/g, '$1ơ')
+                     .replace(/^ow/g, 'ơ')
+                     .replace(/([^Ư])OW/g, '$1Ơ')
+                     .replace(/^OW/g, 'Ơ')
+                     .replace(/([^Ư])Ow/g, '$1Ơ')
+                     .replace(/^Ow/g, 'Ơ');
 
-      // 5.4. uw → ư (không phải sau q)
-      newResult = newResult.replace(/([^q])uw/g, '$1ư')
-                           .replace(/^uw/g, 'ư')
-                           .replace(/([^Q])UW/g, '$1Ư')
-                           .replace(/^UW/g, 'Ư')
-                           .replace(/([^Q])Uw/g, '$1Ư')
-                           .replace(/^Uw/g, 'Ư');
+      // 2.4. uw → ư (không phải sau q)
+      result = result.replace(/([^q])uw/g, '$1ư')
+                     .replace(/^uw/g, 'ư')
+                     .replace(/([^Q])UW/g, '$1Ư')
+                     .replace(/^UW/g, 'Ư')
+                     .replace(/([^Q])Uw/g, '$1Ư')
+                     .replace(/^Uw/g, 'Ư');
 
-      // 5.5. ww → wư (thêm ư sau w)
-      newResult = newResult.replace(/ww/g, 'wư').replace(/WW/g, 'WƯ').replace(/Ww/g, 'Wư');
+      // 2.5. ww → wư
+      result = result.replace(/ww/g, 'wư').replace(/WW/g, 'WƯ').replace(/Ww/g, 'Wư');
 
-      // 5.6. w đơn → ư (không phải trong các pattern trên)
-      // Chỉ replace w đứng độc lập (không phải sau ư, ơ, hoặc trước w)
-      newResult = newResult.replace(/([^ươw])w([^w])/g, '$1ư$2')
-                           .replace(/^w([^w])/g, 'ư$1')
-                           .replace(/([^ươw])w$/g, '$1ư')
-                           .replace(/^w$/g, 'ư')
-                           .replace(/([^ƯƠW])W([^W])/g, '$1Ư$2')
-                           .replace(/^W([^W])/g, 'Ư$1')
-                           .replace(/([^ƯƠW])W$/g, '$1Ư')
-                           .replace(/^W$/g, 'Ư');
+      // 2.6. w đơn → ư
+      result = result.replace(/([^ươw])w([^w])/g, '$1ư$2')
+                     .replace(/^w([^w])/g, 'ư$1')
+                     .replace(/([^ươw])w$/g, '$1ư')
+                     .replace(/^w$/g, 'ư')
+                     .replace(/([^ƯƠW])W([^W])/g, '$1Ư$2')
+                     .replace(/^W([^W])/g, 'Ư$1')
+                     .replace(/([^ƯƠW])W$/g, '$1Ư')
+                     .replace(/^W$/g, 'Ư');
 
       // Kiểm tra xem có thay đổi không
-      if (newResult !== result) {
+      if (result !== oldResult) {
         changed = true;
-        result = newResult;
       }
     }
 
