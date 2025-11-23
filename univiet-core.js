@@ -165,9 +165,40 @@ class UniVietCore {
       if (!selection.rangeCount) return null;
 
       const range = selection.getRangeAt(0);
-      const textNode = range.startContainer;
+      let textNode = range.startContainer;
 
-      if (textNode.nodeType !== Node.TEXT_NODE) return null;
+      // Nếu startContainer là element node (chưa có text), tìm hoặc tạo text node
+      if (textNode.nodeType !== Node.TEXT_NODE) {
+        // Tìm text node con đầu tiên
+        let foundTextNode = null;
+
+        // Nếu element có childNodes, tìm text node
+        if (textNode.childNodes && textNode.childNodes.length > 0) {
+          for (let i = 0; i < textNode.childNodes.length; i++) {
+            if (textNode.childNodes[i].nodeType === Node.TEXT_NODE) {
+              foundTextNode = textNode.childNodes[i];
+              break;
+            }
+          }
+        }
+
+        // Nếu không tìm thấy text node, tạo mới
+        if (!foundTextNode) {
+          foundTextNode = document.createTextNode("");
+          textNode.appendChild(foundTextNode);
+        }
+
+        textNode = foundTextNode;
+
+        // Cập nhật range để trỏ vào text node mới
+        try {
+          range.setStart(textNode, 0);
+          range.setEnd(textNode, 0);
+        } catch (e) {
+          // Nếu không set được range, return null
+          return null;
+        }
+      }
 
       value = textNode.textContent || "";
       start = range.startOffset;
