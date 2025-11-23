@@ -120,6 +120,16 @@
 
   // Xử lý beforeinput - Event hiện đại (Google Docs, modern apps)
   function handleBeforeInput(event) {
+    const isGDocs = isGoogleDocsEditor(event.target);
+    if (isGDocs) {
+      console.log("[UniViet-GDocs] beforeinput:", {
+        inputType: event.inputType,
+        data: event.data,
+        target: event.target,
+        className: event.target.className
+      });
+    }
+
     // Kiểm tra enabled
     if (!isEnabled || !univiet) return;
 
@@ -143,21 +153,38 @@
 
     // Lấy thông tin text hiện tại
     const textInfo = univiet.getTextInfo(element);
+    if (isGDocs) {
+      console.log("[UniViet-GDocs] textInfo:", textInfo);
+    }
     if (!textInfo) return;
 
     // Lấy từ hiện tại
     const wordInfo = univiet.getCurrentWord(textInfo.value, textInfo.start);
+    if (isGDocs) {
+      console.log("[UniViet-GDocs] wordInfo:", wordInfo);
+    }
 
     // Xử lý phím
     const result = univiet.processKey(wordInfo.word, key);
+    if (isGDocs) {
+      console.log("[UniViet-GDocs] processKey result:", result);
+    }
 
     if (result && result.shouldReplace) {
       // Ngăn không cho trình duyệt xử lý input mặc định
       event.preventDefault();
       event.stopPropagation();
 
+      if (isGDocs) {
+        console.log("[UniViet-GDocs] Attempting to replace text...");
+      }
+
       // Thay thế text
       univiet.replaceText(textInfo, result, wordInfo);
+
+      if (isGDocs) {
+        console.log("[UniViet-GDocs] Text replaced!");
+      }
     }
   }
 
